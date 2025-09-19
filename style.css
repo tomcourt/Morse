@@ -1,0 +1,114 @@
+table.symbols, table.symbols th, table.symbols td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align:center;
+}
+
+table.symbols td {
+  min-width: 25px;
+}
+
+.morse {
+  cursor: help;
+}
+
+/* Body contains the tabs */
+body {
+    /* max-width: 800px; */
+    margin: 10px 10px;
+    font-family: Arial, sans-serif;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+    background-color: #f1f1f1;
+    border: 1px solid #999; /* Added border for skeuomorphic effect */
+    border-bottom: none; /* Remove bottom border to blend with content */
+    border-radius: 8px 8px 0 0; /* Rounded top corners for tabs */
+    padding: 5px 10px;
+    margin-right: 1px; /* Small gap between tabs */
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.tab-button:hover {
+    background-color: #e0e0e0; /* Slightly darker on hover */
+}
+
+.tab-button.active {
+    background-color: #fff;
+    border-bottom: 1px solid #fff; /* Match content background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Stronger shadow when active */
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+    padding: 10px;
+    border: 1px solid #999;     /* Match tab borders */
+    border-radius: 0 4px 4px 4px; /* Rounded corners for content */
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.tab-content.active {
+    display: block;
+}
+
+
+/* Statistics charts */
+.chart-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.chart-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.chart-row {
+    display: flex;
+    align-items: center;
+}
+
+.bar-character {
+    width: 10px;
+    text-align: center;
+    margin-right: 10px;
+    font-size: 12px;
+}
+
+.bar-conflate {
+    width: 10px;
+    text-align: center;
+    margin-right: 10px;
+    font-size: 12px;
+    color:#ff0000;
+}
+
+.bar-container {
+    flex-grow: 1;
+    height: 9px;
+    background-color: #f0f0f0;
+    display: flex;
+}
+
+.bar {
+    height: 100%;
+    display: inline-block;
+}
+
+.bar-wrong { background-color: #ff0000; }
+.bar-timeout { background-color: #ffbf00; }
+.bar-correct { background-color: #0000ff; }
+

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset=utf-8 />
+<!--   
+  Skip the mobile stuff for the calculator app, but some may be useful for morse
+  <meta name=viewport content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name=apple-mobile-web-app-capable content=yes>
+  <meta name=apple-mobile-web-app-status-bar-style content=black>
+-->  
+  <title>Morse Code Trainer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="morse.js"></script>
+</head>
+
+
+<body>
+  <!-- Tab Buttons -->
+  <div class="tab-buttons">
+      <button class="tab-button active" onclick="openTab(event, 'trainingTab')">Training</button>
+      <button class="tab-button" onclick="openTab(event, 'setupTab')">Setup</button>
+      <button class="tab-button" onclick="openTab(event, 'sessionsTab')">Sessions</button>
+      <button class="tab-button" onclick="openTab(event, 'helpTab')">Help</button>
+  </div>
+
+  <div id="trainingTab" class="tab-content active">
+  <table style="border-spacing: 10px 10px">
+    <tr>
+      <td>
+        <label>Koch progress:<input type="number" id="kochEnabled" min="2" max="50" step="2"></label>
+      </td>
+      <td>
+        <label>Lesson:<select id="lessons">
+          <option value="1">include last 2 only</option>
+          <option value="2">include last 4 only</option>
+          <option value="3">include last 6 only</option>
+          <option value="4">include all enabled, least seen</option>
+          <option value="5">include all enabled, accuracy</option>
+          <option value="6">include all enabled, slowest</option>
+          <option value="7">random words</option>
+          <option value="8">simulate qso's</option>
+        </select></label>
+      </td>
+      <td>
+        <label>Enabled character set:<input type="text" id="enabledChars" size="50"></label>
+      </td>
+    </tr>
+  <table>
+
+  <table style="border-spacing: 10px 10px"> <tr>
+    <td style="height: 40px; width: 40px;">
+      <span id="status" style="padding: 10px; border: 2px solid;">&#x23F8</span>
+    </td>
+    <td>
+      <progress id="progress" value="0" max="100"></progress>
+    </td>
+    <td>
+      <span id="text" style="display: block; padding: 10px; border: 2px solid; height: 18px; min-width: 600px;"></span>
+    </td>
+    <td>
+      <span id="results" style="padding: 10px; white-space: pre;"></span>
+    </td>
+  </tr> </table>
+
+  <br>
+
+  <div class="chart-container" id="chart">
+  </div>
+    <!-- <th id="charA" class="morse">A</th>        
+    <th id="char_period" class="morse">.</th>       
+    <th id="char_comma"  class="morse">,</th>
+    <th id="char_slash"  class="morse">/</th>
+    <th id="char_query"  class="morse">?</th>      
+    <th id="char_BT"     class="morse"><super style="text-decoration: overline;">BT</super><sub>=</sub></th>
+    <th id="char_AR"     class="morse"><super style="text-decoration: overline;">AR</super><sub>+</sub></th>
+    <th id="char_SK"     class="morse"><super style="text-decoration: overline;">SK</super><sub>\</sub></th>
+    --> 
+  <br>
+  <input type="button" id="resultsStatistics" value="Result #">
+  <input type="button" id="accuracyStatistics" value="Result %">
+  <input type="button" id="speedStatistics" value="Speed">
+  <input type="button" id="resetStatistics" style="float: right;" value="Reset">
+  </div>
+
+  <div id="setupTab" class="tab-content">
+    <table id="settings" style="border-spacing: 20px 10px">
+      <tr>
+        <td>
+          <label>Character WPM:<input type="number" id="charWPM" min="5" max="40" step="1"></label>
+        </td>
+        <td>
+          <label>Dither &#177;WPM:<input type="number" id="ditherWPM" min="0" max="10" step="1"></label>
+        </td>
+        <td>
+          <label>Word WPM:<input type="number" id="wordWPM" min="5" max="40" step="1"></label>
+        </td>
+        <td>
+          <label>Character ms:<input type="number" id="charMs" style="border:0 none;" min="0" max="9999" readonly></label>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label>Goal Accuracy%:<input type="number" id="advancePercent" min="80" max="101"></label>
+        </td>
+        <td>
+          <label>Goal Successive:<input type="number" id="advanceSuccessive" min="10" max="99"></label>
+        </td>
+        <td>
+          <label>Advance on Goal:<input type="checkbox" id="advanceGoal"></label>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label>Reset ms:<input type="number" id="resetMs" min="0" max="9999" step="100"></label>
+        </td>
+        <td>
+          <label>Tone Hz:<input type="number" id="toneHz" min="100" max="9999" step="50"></label>
+        </td>
+        <td>
+          <label>Dither &#177;Tone:<input type="number" id="ditherTone" min="0" max="200" step="10"></label>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3">
+          <label>Koch Order:<input type="text" id="kochOrder" size="50"></label>
+        </td>
+        <td>
+          <input type="button" id="defaultSetup" value="Default">
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div id="sessionsTab" class="tab-content">   
+    <table id="sessions" class="symbols" style="width:100%">
+        <thead>
+          <th>Date</th>
+          <th>Training time</th>
+          <th>Char corrct/recv'd</th>
+          <th>Koch progress</th>
+          <th>Lesson #</th>
+          <th>Char WPM</th>
+          <th>Word WPM</th>
+          <th>Speed ms</th>
+        </thead>
+        <tbody>
+            <!-- Rows will be added here -->
+        </tbody>
+    </table>
+    <br>
+    <input type="button" id="resetSessions" style="float: right;" value="Reset">
+  </div>
+
+  <div id="helpTab" class="tab-content">
+    To start or stop a lesson, click on the player control symbol or press Esc key.<p>
+    Characters sent show up in the large result box. Black for correct, red for wrong, orange for timeout.<p>
+    To see the morse for any character, hover the cursor over the character in the results table. To hear it, click on the character.<p> 
+    Remember to say outloud or clearly think of the character before typing it, otherwise you are training<p>
+    your fingers to move when you hear a sound and will have trouble handwritting or hearing the words later.<p>
+    To practice characters you are having trouble telling apart, set them in 'Enabled character set', to reset just select a lesson<p>
+    Keep sessions short until you build up stanima.<p>
+    Roll back the 'Koch enabled' and 'Lesson' when starting a new session to review the last characters you learned before learning any new characters.<p>
+    Under 'Settings', 'Reset' controls how long after starting before morse starts and extra time whenever you miss a character to regain your composure<p>
+  </div>
+</body>
+</html>
