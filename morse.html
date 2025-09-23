@@ -15,7 +15,7 @@
 </head>
 
 
-<body>
+<body id="body">
   <!-- Tab Buttons -->
   <div class="tab-buttons">
       <button class="tab-button active" onclick="openTab(event, 'trainingTab')">Training</button>
@@ -35,35 +35,48 @@
           <option value="1">include last 2 only</option>
           <option value="2">include last 4 only</option>
           <option value="3">include last 6 only</option>
-          <option value="4">include all enabled, least seen</option>
-          <option value="5">include all enabled, accuracy</option>
-          <option value="6">include all enabled, slowest</option>
+          <option value="4">all enabled, least seen</option>
+          <option value="5">all enabled, accuracy</option>
+          <option value="6">all enabled, slowest</option>
           <option value="7">random words</option>
           <option value="8">simulate qso's</option>
         </select></label>
       </td>
       <td>
-        <label>Enabled character set:<input type="text" id="enabledChars" size="50"></label>
+        <label>Enabled:<input type="text" id="enabledChars" size="47"></label>
       </td>
     </tr>
   <table>
 
   <table style="border-spacing: 10px 10px"> <tr>
-    <td style="height: 40px; width: 40px;">
-      <span id="status" style="padding: 10px; border: 2px solid;">&#x23F8</span>
+    <td style="height: 40px; width: 30px;">
+      <span id="status" style="padding: 8px 10px; border: 2px solid; display: inline-block; height:18px; width: 11px;">&#x23F8</span>
     </td>
     <td>
       <progress id="progress" value="0" max="100"></progress>
     </td>
     <td>
-      <span id="text" style="display: block; padding: 10px; border: 2px solid; height: 18px; min-width: 600px;"></span>
-    </td>
-    <td>
-      <span id="results" style="padding: 10px; white-space: pre;"></span>
+      <span id="text" style="display: block; padding: 5px 10px; border: 1px solid; height: 20px; min-width: 650px;"></span>
     </td>
   </tr> </table>
 
-  <br>
+  <table style="border-spacing: 10px 10px" width="100%"> <tr>
+    <td> 
+    <label>Results #<input type="radio" id="countResults"   name="results" onchange="updateGraph(undefined, false)" value="count" checked></label>
+    </td>
+    <td>
+    <label>Results %<input type="radio" id="percentResults" name="results" onchange="updateGraph(undefined, true)" value="percent">        </label>
+    </td>
+    <td>
+      <span id="results" style="padding: 10px; white-space: pre;">Click the pause icon to start a lesson</span>
+    </td>
+        <td> 
+    <label>Session   <input type="radio" id="sessionStats"    name="stats" onchange="updateGraph(sessionStats)" value="count" checked></label>
+    </td>
+    <td>
+    <label>Cumulative<input type="radio" id="cumulativeStats" name="stats" onchange="updateGraph(cumulativeStats)" value="percent">        </label>
+    </td>
+  </tr> </table>
 
   <div class="chart-container" id="chart">
   </div>
@@ -76,11 +89,6 @@
     <th id="char_AR"     class="morse"><super style="text-decoration: overline;">AR</super><sub>+</sub></th>
     <th id="char_SK"     class="morse"><super style="text-decoration: overline;">SK</super><sub>\</sub></th>
     --> 
-  <br>
-  <input type="button" id="resultsStatistics" value="Result #">
-  <input type="button" id="accuracyStatistics" value="Result %">
-  <input type="button" id="speedStatistics" value="Speed">
-  <input type="button" id="resetStatistics" style="float: right;" value="Reset">
   </div>
 
   <div id="setupTab" class="tab-content">
@@ -109,6 +117,9 @@
         <td>
           <label>Advance on Goal:<input type="checkbox" id="advanceGoal"></label>
         </td>
+        <td>
+          <label>Type behind:<input type="checkbox" id="typeBehind"></label>
+        </td>
       </tr>
       <tr>
         <td>
@@ -123,7 +134,7 @@
       </tr>
       <tr>
         <td colspan="3">
-          <label>Koch Order:<input type="text" id="kochOrder" size="50"></label>
+          <label>Koch Order:<input type="text" id="kochOrder" size="54"></label>
         </td>
         <td>
           <input type="button" id="defaultSetup" value="Default">
@@ -142,7 +153,7 @@
           <th>Lesson #</th>
           <th>Char WPM</th>
           <th>Word WPM</th>
-          <th>Speed ms</th>
+          <th>Avg. Speed ms</th>
         </thead>
         <tbody>
             <!-- Rows will be added here -->
@@ -153,13 +164,32 @@
   </div>
 
   <div id="helpTab" class="tab-content">
+    This trainer will teach you morse code quickly. It has the following conventional features to do this:<p>
+    <ul>
+      <li>Farnsworth method - play morse code characters quickly while allowing more time between characters and words to respond</li>
+      <li>Koch method - start by mastering 2 characters before adding more 2 at a time and then mastering those </li>    
+    </ul>
+    And a number of new features that also help you learn quickly:
+    <ul>
+      <li>Quick feedback - a buzzer sound immedietly indicates the character was wrong or wasn't typed in time</li>
+      <li>Balanced training - additional lessons concentrating on problem characters make sure all characters are learned equally well</li>
+      <li>Detailed graphs - for each character shows both accuracy and speed of recognition</li>      
+      <li>Visual progress - your progress is clearly shown in graphs to assist with motivation</li>    
+    </ul>
+    <p>
+    Usage:<p>
     To start or stop a lesson, click on the player control symbol or press Esc key.<p>
     Characters sent show up in the large result box. Black for correct, red for wrong, orange for timeout.<p>
-    To see the morse for any character, hover the cursor over the character in the results table. To hear it, click on the character.<p> 
-    Remember to say outloud or clearly think of the character before typing it, otherwise you are training<p>
+    To see the morse for any character, hover the cursor over the character in the graph below. To hear it, click on the character.<p> 
+    <p>
+    Tips:<p>
+    Remember to clearly think of the character while typing it, otherwise you are training<p>
     your fingers to move when you hear a sound and will have trouble handwritting or hearing the words later.<p>
     To practice characters you are having trouble telling apart, set them in 'Enabled character set', to reset just select a lesson<p>
     Keep sessions short until you build up stanima.<p>
+    Don't type more than one character for each sent, if you type the wrong character, move on to the next one<p>
+    If you catch yourself thinking before recognizig a character, except when first learning the character, it means you need to keep learning that character.
+    To make sure you do, increase the 'Word WPM'. To challenge yourself you should still timeout every so often.<p>
     Roll back the 'Koch enabled' and 'Lesson' when starting a new session to review the last characters you learned before learning any new characters.<p>
     Under 'Settings', 'Reset' controls how long after starting before morse starts and extra time whenever you miss a character to regain your composure<p>
   </div>

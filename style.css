@@ -8,8 +8,12 @@ table.symbols td {
   min-width: 25px;
 }
 
+input[data-enabled="true"] {
+    font-weight: bold;
+}
+
 .morse {
-  cursor: help;
+  cursor: pointer;
 }
 
 /* Body contains the tabs */
@@ -53,7 +57,6 @@ body {
     padding: 10px;
     border: 1px solid #999;     /* Match tab borders */
     border-radius: 0 4px 4px 4px; /* Rounded corners for content */
-    background-color: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
@@ -63,17 +66,9 @@ body {
 
 
 /* Statistics charts */
-.chart-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2px;
-    font-weight: bold;
-    font-size: 12px;
-}
-
 .chart-container {
     max-width: 1000px;
-    margin: 0 auto;
+    margin: 10px 10px;
 }
 
 .chart-row {
@@ -81,23 +76,38 @@ body {
     align-items: center;
 }
 
+.disabled-char {
+    color:#8080ff !important;
+    font-weight:normal !important; 
+}
+
 .bar-character {
     width: 10px;
     text-align: center;
-    margin-right: 10px;
+    margin-right: 6px;
     font-size: 12px;
+    font-weight: bold;
+    color: #0000ff;
 }
 
 .bar-conflate {
     width: 10px;
     text-align: center;
-    margin-right: 10px;
+    margin-right: 6px;
     font-size: 12px;
     color:#ff0000;
 }
 
-.bar-container {
+.bar-results {
     flex-grow: 1;
+    height: 9px;
+    background-color: #f0f0f0;
+    display: flex;
+}
+
+.bar-speed {
+    flex-grow: 1;
+    margin-left: 8px;
     height: 9px;
     background-color: #f0f0f0;
     display: flex;
@@ -108,7 +118,10 @@ body {
     display: inline-block;
 }
 
-.bar-wrong { background-color: #ff0000; }
+.bar-wrong   { background-color: #ff0000; }
 .bar-timeout { background-color: #ffbf00; }
 .bar-correct { background-color: #0000ff; }
 
+.bar-fast    { background-color: #c89600; }
+.bar-average { background-color: #ffbf00; }
+.bar-slow    { background-color: #ffde7b; }
