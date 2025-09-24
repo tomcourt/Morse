@@ -8,18 +8,18 @@ const $$ = (selector, context = document) => Array.from(context.querySelectorAll
 // const items = $$('.item'); // NodeList to Array
 
 // Adding event handlers
-const on = (elements, event, handler) => {
+const onEvent = (elements, event, handler) => {
   if (elements instanceof Node) {
     elements.addEventListener(event, handler);
   } else if (elements instanceof NodeList || Array.isArray(elements)) {
     elements.forEach(el => el.addEventListener(event, handler));
   }
 };
-// on($('#myButton'), 'click', () => console.log('Clicked!'));
-// on($$('.item'), 'mouseover', e => e.target.style.background = 'yellow');
+// onEvent($('#myButton'), 'click', () => console.log('Clicked!'));
+// onEvent($$('.item'), 'mouseover', e => e.target.style.background = 'yellow');
 
 // Remove event handlers
-const off = (elements, event, handler) => {
+const offEvent = (elements, event, handler) => {
   if (elements instanceof Node) {
     elements.removeEventListener(event, handler);
   } else if (elements instanceof NodeList || Array.isArray(elements)) {
@@ -27,8 +27,8 @@ const off = (elements, event, handler) => {
   }
 };
 // const handler = () => console.log('Clicked!');
-// on($('#myButton'), 'click', handler);
-// off($('#myButton'), 'click', handler); // Remove the handler
+// offEvent($('#myButton'), 'click', handler);
+// offEvent($('#myButton'), 'click', handler); // Remove the handler
 
 // Add/remove/toggle classes
 const addClass = (elements, className) => {

@@ -17,7 +17,7 @@
 // Sad trombone to replace bananna peel
 // Option to ignore results on aborted lesson
 // Use tick syntax for formatted strings
-// Move all style out of HTML and javascript into CSS
+// Move all style out of HTML and into CSS
 // Allow copy behind option, will show orange for missed characters (timeout or wrong)
 // Add grace ms to allow copy behind, if symbol is typed within grace its correct
 // Bad characters are shown orange until lesson is done, then an analysis is done to determine if timeout or wrong
@@ -51,13 +51,8 @@ let isPercentResults = false;
 let pauseState=0, playState=1, waitingState=2, checkmarkState=3, wrongState=4; 
 let state = pauseState;
 
-let progressObject;
 let progressTimer;
 let progressStartTime;
-let kochEnabledObject;
-let lessonsObject;
-let textObject;
-let resultsObject;
 
 
 
@@ -236,21 +231,10 @@ let currentSession;
 
 
 function openTab(evt, tabName) {
-    // Hide all tab content
-    const tabContents = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].classList.remove("active");
-    }
-
-    // Remove active class from all buttons
-    const tabButtons = document.getElementsByClassName("tab-button");
-    for (let i = 0; i < tabButtons.length; i++) {
-        tabButtons[i].classList.remove("active");
-    }
-
-    // Show the selected tab content and add active class to the clicked button
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
+    removeClass($$('.tab-content'),'active');   // Hide all tab content    
+    removeClass($$('.tab-button'), 'active');   // Remove active class from all buttons
+    addClass($('#'+tabName),'active');          // Show the selected tab content
+    addClass(evt.currentTarget,'active');       // Make clicked button show selected
 }
 
 
@@ -270,16 +254,13 @@ function initAudioContext() {
 
 
 // Also updates the status UI element
-function setState(newState, symbol="", color="black") {
-    const pauseStatus     = "&#x23F8";  // pause symbol
-    const playStatus      = "&#x23F5";  // play symbol
-    const waitingStatus   = "&#x23F1";  // clock symbol
-    const checkmarkStatus = "&#x2713";  // checkmark symbol
-    const statusStyle     = "padding: 8px 10px; border: 2px solid; height:18px; width: 11px; display: inline-block;";
-    const statusObject = document.getElementById('status');
+function setState(newState, symbol='', color='black') {
+    const pauseStatus     = '&#x23F8';  // pause symbol
+    const playStatus      = '&#x23F5';  // play symbol
+    const waitingStatus   = '&#x23F1';  // clock symbol
+    const checkmarkStatus = '&#x2713';  // checkmark symbol
 
     state = newState;
-
     switch(state) {
         case pauseState:        symbol = pauseStatus;                   break;       
         case playState:         symbol = playStatus;                    break; 
@@ -287,9 +268,8 @@ function setState(newState, symbol="", color="black") {
         case checkmarkState:    symbol = checkmarkStatus;               break;  
         case wrongState:        /* use passed function parameter */     break;
     }
-
-    statusObject.innerHTML = symbol;
-    statusObject.style = statusStyle + " color: " + color + ";";
+    $('#status').innerHTML = symbol;
+    $('#status').style.color = color;
 }
 
 
@@ -443,22 +423,22 @@ function createWords() {
     scrambleArray(list);
     let isPeriod = enabledSymbols.includes(".");
     let isComma =  enabledSymbols.includes(","); 
-    randomWords = "";
+    randomWords = '';
     while (list.length > 0 && randomWords.length < 61) {
         if (randomWords.length > 0)
-            randomWords += " ";
+            randomWords += ' ';
         randomWords += list.pop();
         if (isPeriod && Math.random() < .25)
-            randomWords += ".";
+            randomWords += '.';
         else if(isComma && Math.random() < .25)
-            randomWords += ",";
+            randomWords += ',';
     }
     return randomWords;
 }
 
 
 function highestLessonAvailable() {
-    let enabled = Number(document.getElementById('kochEnabled').value) / 2;
+    let enabled = Number($('#kochEnabled').value) / 2;
     if (enabled < 4)
         return enabled;
     else if (enabled < 6)
@@ -472,11 +452,10 @@ function highestLessonAvailable() {
 
 function setEnabledSymbols() {
     // calculate enabled symbols based on drop down selectors
-    let enabled = Number(document.getElementById('kochEnabled').value);
-    const includesObject = document.getElementById('lessons');
-    let lessons = Number(includesObject.value);
+    let enabled = Number($('#kochEnabled').value);
+    let lessons = Number($('#lessons').value);
 
-    const options = includesObject.options;
+    const options = $('#lessons').options;
 
     for (let option of options) 
         option.disabled = (option.value > highestLessonAvailable());
@@ -484,7 +463,7 @@ function setEnabledSymbols() {
     // check if enabled is set to more symbols than we have
     if (enabled >= settings.kochMethodOrder.length) {
         enabled = settings.kochMethodOrder.length;
-        document.getElementById('kochEnabled').value = enabled;
+        $('#kochEnabled').value = enabled;
     }
 
     let odd = (enabled%2);
@@ -499,24 +478,23 @@ function setEnabledSymbols() {
         start = 0;
     enabledSymbols = settings.kochMethodOrder.slice(start, enabled); 
     isCharLesson = false;
-    document.getElementById('enabledChars').value = enabledSymbols;  
+    $('#enabledChars').value = enabledSymbols;  
 }
 
 
 function highlightEnabledSymbols() {
-    const elements = document.getElementsByClassName("bar-character");
-    for (let element of elements) 
+    for (let element of $$('.bar-character')) 
         if (enabledSymbols.includes(element.innerHTML))
-            element.classList.remove("disabled-char");
+            element.classList.remove('disabled-char');
         else
-            element.classList.add("disabled-char");
+            element.classList.add('disabled-char');
 }
 
 
 function createLesson() {
     remainingLessonChars = "";
 
-    let lesson = Number(lessonsObject.value);
+    let lesson = Number($('#lessons').value);
 
     switch (lesson) {
         case 1: 
@@ -595,7 +573,7 @@ function updateStatsAndSession() {
         lessonStat.average = 0;
     else
         lessonStat.average = Math.round(lessonStat.total / lessonStat.correct);
-    resultsObject.textContent = `${lessonStat.wrong} wrong, ${lessonStat.timeout} timeout, ${lessonStat.correct} correct  &#x2014;  ` +
+    $('#results').textContent = `${lessonStat.wrong} wrong, ${lessonStat.timeout} timeout, ${lessonStat.correct} correct  ---  ` +
                                 `${lessonStat.fast}ms fast, ${lessonStat.average}ms avg, ${lessonStat.slow}ms slow`;
     accumulateStat(sessionStat, lessonStat);        
     accumulateStats(sessionStats, lessonStats);
@@ -616,11 +594,11 @@ function updateStatsAndSession() {
     currentSession.lessons++;
     currentSession.charWPM = settings.charWPM;
     currentSession.wordWPM = settings.wordWPM;
-    currentSession.finalEnabled = Number(kochEnabledObject.value); 
-    currentSession.finalLesson = Number(lessonsObject.value); 
+    currentSession.finalEnabled = Number($('#kochEnabled').value); 
+    currentSession.finalLesson  = Number($('#lessons').value); 
     
-    localStorage.setItem("morseCodeTrainer.sessions", JSON.stringify(sessions));
-    localStorage.setItem("morseCodeTrainer.cumulativeStats", JSON.stringify(cumulativeStats));
+    localStorage.setItem("morseCodeTrainer.sessions",                     JSON.stringify(sessions));
+    localStorage.setItem("morseCodeTrainer.cumulativeStats",              JSON.stringify(cumulativeStats));
     localStorage.setItem(`morseCodeTrainer.stats.${currentSession.date}`, JSON.stringify(sessionStats));    
     
     updateGraph();
@@ -632,9 +610,9 @@ function startLesson() {
     createLesson();
     lessonStartTime = Date.now();
     runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
-    lastCharSent = "";
-    textObject.innerHTML = "";
-    resultsObject.textContent = "Concentrate on the sound";
+    lastCharSent = '';
+    $('#text').innerHTML = '';
+    $('#results').textContent = "Concentrate on the sound";
 }
 
 
@@ -646,19 +624,19 @@ function stopLesson() {
 
     if (!isCharLesson) {
         if (correctInRow >= settings.advanceSuccessive || 100*lessonStat.correct/lessonCharsLength >= settings.advancePercent) {
-            let soundFile = new Audio("Tada.wav");
+            let soundFile = new Audio('Tada.wav');
             soundFile.volume = .5;
             soundFile.play();
 
-            if (document.getElementById("advanceGoal").checked) {
-                if (++lessonsObject.value > highestLessonAvailable()) {
-                    lessonsObject.value = 1;
-                    kochEnabledObject.value = Number(kochEnabledObject.value) + 2;
+            if ($('#advanceGoal').checked) {
+                if (++$('#lessons').value > highestLessonAvailable()) {
+                    $('#lessons').value = 1;
+                    $('#kochEnabled').value = Number($('#kochEnabled').value) + 2;
                 } 
             }
         }
         else {
-            let soundFile = new Audio("SadTrombone.mp3");
+            let soundFile = new Audio('SadTrombone.mp3');
             soundFile.volume = .5;
             soundFile.play();
         }
@@ -667,20 +645,46 @@ function stopLesson() {
 }
 
 
+function timeoutWithoutKeypress() {
+    setState(wrongState, lastCharSent, 'orange');
+    clearInterval(progressTimer);
+    $('#progress').value = $('#progress').max;
+    $('#text').innerHTML += '<SPAN style="color:orange";>' + lastCharSent + '</SPAN>';
+    runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
+    $('#body').style.backgroundColor = 'orange';
+    if ($('#typeBehind').checked) {
+        delay(200).then(
+            function() { $('#body').style.backgroundColor = 'white';},
+        );
+    }
+    else {
+        playBeep(200,200,.2,'square').then(
+            function() { $('#body').style.backgroundColor = 'white';},
+        );
+    }
+    lessonStat.timeout++;
+    lessonStats[lastCharSent].timeout++;
+    lastCharSent = '';
+}
+
+
 function sendNextCharacter() {
-    if (remainingLessonChars == "" || correctInRow >= settings.advanceSuccessive) 
+    if (lastCharSent != '') {
+        timeoutWithoutKeypress();
+    }
+    if (remainingLessonChars == '' || correctInRow >= settings.advanceSuccessive) 
         stopLesson();
     else {
         let send = remainingLessonChars[0];
         remainingLessonChars = remainingLessonChars.slice(1); 
         setState(playState);
-        progressObject.value = 0;
+        $('#progress').value = 0;
         playMorse(morse[send]).then(() => {
             if (state == playState) {
                 setState(waitingState);
                 progressStartTime = Date.now();
                 progressTimer = window.setInterval(() => {
-                    progressObject.value = Date.now() - progressStartTime;
+                    $('#progress').value = Date.now() - progressStartTime;
                 }, 100);
                 lastCharSent = send;
                 timeoutTimer = window.setTimeout(timeoutWithoutKeypress, responseTimeoutMs);
@@ -690,43 +694,20 @@ function sendNextCharacter() {
 }
 
 
-function timeoutWithoutKeypress() {
-    setState(wrongState, lastCharSent, "orange");
-    clearInterval(progressTimer);
-    progressObject.value = progressObject.max;
-    textObject.innerHTML += '<SPAN style="color:orange";>' + lastCharSent + '</SPAN>';
-    runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
-    document.getElementById("body").style.backgroundColor = "orange";
-    if (document.getElementById("typeBehind").checked) {
-        delay(200).then(
-            function() { document.getElementById("body").style.backgroundColor = "white";},
-        );
-    }
-    else {
-        playBeep(200,200,.2,"square").then(
-            function() { document.getElementById("body").style.backgroundColor = "white";},
-        );
-    }
-    lessonStat.timeout++;
-    lessonStats[lastCharSent].timeout++;
-    lastCharSent = "";
-}
-
-
 // time the keystroke from when the character was sent
 document.addEventListener('keydown', (evt) => {
-    if (evt.key == "Escape") {
+    if (evt.key == 'Escape') {
         if (state == pauseState)
             startLesson();
         else
             stopLesson();        
     }
-    if (evt.key && lastCharSent != "") {
+    if (evt.key && lastCharSent != '') {
         clearTimeout(timeoutTimer);
         clearInterval(progressTimer);
         if (lastCharSent == evt.key.toUpperCase()) {
             setState(checkmarkState);
-            textObject.innerHTML += evt.key.toUpperCase();
+            $('#text').innerHTML += evt.key.toUpperCase();
             let interval = Date.now() - progressStartTime;
             runTimer = window.setTimeout(sendNextCharacter, responseTimeoutMs-interval);
             correctInRow++;
@@ -740,18 +721,18 @@ document.addEventListener('keydown', (evt) => {
             lessonStats[lastCharSent].correct++;
         }
         else {
-            setState(wrongState, lastCharSent, "red");
-            textObject.innerHTML += '<SPAN style="color:red";>' + lastCharSent + '</SPAN>';
+            setState(wrongState, lastCharSent, 'red');
+            $('#text').innerHTML += '<SPAN style="color:red";>' + lastCharSent + '</SPAN>';
             runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
-            document.getElementById("body").style.backgroundColor = "red";
-            if (document.getElementById("typeBehind").checked) {
+            $('#body').style.backgroundColor = 'red';
+            if ($('#typeBehind').checked) {
                 delay(200).then(
-                    function() { document.getElementById("body").style.backgroundColor = "white";},
+                    function() { $('#body').style.backgroundColor = 'white';},
                 );
             }
             else {
-                playBeep(200,200,.2,"square").then(
-                    function() { document.getElementById("body").style.backgroundColor = "white";},
+                playBeep(200,200,.2,'square').then(
+                    function() { $('#body').style.backgroundColor = 'white';},
                 );
             }
             correctInRow = 0;
@@ -759,56 +740,55 @@ document.addEventListener('keydown', (evt) => {
             lessonStats[lastCharSent].conflated = evt.key.toUpperCase();
             lessonStats[lastCharSent].wrong++;
         }
-        lastCharSent = "";
+        lastCharSent = '';
     }
 });
 
 
 function updateCharMs() {
-     const charMsObject = document.getElementById('charMs');
-     charMsObject.value = responseTimeoutMs = Math.floor(farnsworthWordUnit() * 3);
-     progressObject.max = charMsObject.value;
+     $('#charMs').value = responseTimeoutMs = Math.floor(farnsworthWordUnit() * 3);
+     $('#progress').max = $('#charMs').value;
 }
 
 
 function initalizeSettings() {
-    document.getElementById('charWPM').value           = settings.charWPM;
-    document.getElementById('wordWPM').value           = settings.wordWPM;
-    document.getElementById('kochOrder'). value        = settings.kochMethodOrder;
-    document.getElementById('advancePercent').value    = settings.advancePercent
-    document.getElementById('advanceSuccessive').value = settings.advanceSuccessive;
-    document.getElementById('advanceGoal').checked     = settings.advanceGoal;
-    document.getElementById('typeBehind').checked      = settings.typeBehind;
-    document.getElementById('resetMs').value           = settings.resetMs;
-    document.getElementById('toneHz').value            = settings.toneHz;
+    $('#charWPM').value           = settings.charWPM;
+    $('#wordWPM').value           = settings.wordWPM;
+    $('#kochOrder'). value        = settings.kochMethodOrder;
+    $('#advancePercent').value    = settings.advancePercent
+    $('#advanceSuccessive').value = settings.advanceSuccessive;
+    $('#advanceGoal').checked     = settings.advanceGoal;
+    $('#typeBehind').checked      = settings.typeBehind;
+    $('#resetMs').value           = settings.resetMs;
+    $('#toneHz').value            = settings.toneHz;
     updateCharMs();
 }
 
 
 function updateSettings() {
-    settings.charWPM           = Number(document.getElementById('charWPM').value);
-    settings.wordWPM           = Number(document.getElementById('wordWPM').value);
-    settings.kochMethodOrder   = document.getElementById('kochOrder').value;
-    settings.advancePercent    = Number(document.getElementById('advancePercent').value);
-    settings.advanceSuccessive = Number(document.getElementById('advanceSuccessive').value);
-    settings.resetMs           = Number(document.getElementById('resetMs').value);
-    settings.toneHz            = Number(document.getElementById('toneHz').value);
-    settings.advanceGoal       = document.getElementById('advanceGoal').checked;
-    settings.typeBehind        = document.getElementById('typeBehind').checked;
+    settings.charWPM           = Number($('#charWPM').value);
+    settings.wordWPM           = Number($('#wordWPM').value);
+    settings.kochMethodOrder   = $('#kochOrder').value;
+    settings.advancePercent    = Number($('#advancePercent').value);
+    settings.advanceSuccessive = Number($('#advanceSuccessive').value);
+    settings.resetMs           = Number($('#resetMs').value);
+    settings.toneHz            = Number($('#toneHz').value);
+    settings.advanceGoal       = $('#advanceGoal').checked;
+    settings.typeBehind        = $('#typeBehind').checked;
     updateCharMs();
     localStorage.setItem("morseCodeTrainer.settings", JSON.stringify(settings));
 }
 
 
 function populateSessionsTable() {
-    const tableBody = document.getElementById('sessions').getElementsByTagName('tbody')[0];
-    tableBody.innerHTML = ''; // Clear existing rows
+    const tableBody = $('#sessions>tbody');     // find the tbody inside the sessions table
+    tableBody.innerHTML = '';                   // Clear existing rows
 
     sessions.forEach(item => {
         let row = tableBody.insertRow();
         let date = new Date(item.date);
-        row.insertCell(0).innerHTML = date.toLocaleDateString() + " " + date.toLocaleTimeString();
-        row.insertCell(1).innerHTML = `${Math.floor(item.duration/60)}:${(item.duration%60).toString().padStart(2,"0")}`;
+        row.insertCell(0).innerHTML = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        row.insertCell(1).innerHTML = `${Math.floor(item.duration/60)}:${(item.duration%60).toString().padStart(2,'0')}`;
         row.insertCell(2).innerHTML = `${item.stat.correct} / ${item.stat.correct+item.stat.timeout+item.stat.wrong}`;
         row.insertCell(3).innerHTML = `${item.finalEnabled}`;
         row.insertCell(4).innerHTML = `${item.finalLesson}`;
@@ -821,7 +801,7 @@ function populateSessionsTable() {
 
 // Initialize the graph structure with headers and empty rows
 function initializeGraph() {
-    const chart = document.getElementById('chart');
+    const chart = $('#chart');
 
     // Create empty rows
     for (let symbol of allSymbols) {
@@ -835,12 +815,9 @@ function initializeGraph() {
         chart.appendChild(rowDiv);
     }
 
-    // iterate off of class name morse to add handlers to show and play morse
-    const elements = document.querySelectorAll('.morse');
-    for(let element of elements) {
-        element.addEventListener('mouseover', showSymbol); 
-        element.addEventListener('click', playSymbol); 
-    }
+    // for class morse, add handlers to show and play morse
+    onEvent($$('.morse'), 'mouseover', showSymbol); 
+    onEvent($$('.morse'), 'click',     playSymbol); 
 }
 
 
@@ -861,7 +838,7 @@ function updateGraph(stats = displayStats, isRatio = isPercentResults, maxTotal 
     }
 
     for (let symbol of allSymbols) {
-        const rowDiv = document.getElementById("row-" + symbolToIdSuffix(symbol));
+        const rowDiv = $('#row-' + symbolToIdSuffix(symbol));
         const stat = Object.assign({}, stats[symbol]); // shallow copy of statistic object
         if (!rowDiv || stat == undefined) 
             return;
@@ -875,7 +852,7 @@ function updateGraph(stats = displayStats, isRatio = isPercentResults, maxTotal 
         barResults.innerHTML = '';    // Clear existing bars
         if (isRatio)
             maxTotal = stat.wrong + stat.timeout + stat.correct;
-        for (let tag of ["wrong", "timeout", "correct"]) {
+        for (let tag of ['wrong', 'timeout', 'correct']) {
             const bar = document.createElement('div');
             bar.className = 'bar bar-' + tag;
             bar.style.width = `${stat[tag]*100/maxTotal}%`;
@@ -894,7 +871,7 @@ function updateGraph(stats = displayStats, isRatio = isPercentResults, maxTotal 
         const barSpeed = rowDiv.querySelector('.bar-speed');
         barSpeed.innerHTML = '';    // Clear existing bars
         let last = 0;
-        for (let tag of ["fast", "average", "slow"]) {
+        for (let tag of ['fast', 'average', 'slow']) {
             const bar = document.createElement('div');
             bar.className = 'bar bar-' + tag;
             bar.style.width = `${(stat[tag]-last)*100/maxTime}%`;
@@ -911,46 +888,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // if (confirm("Clear out local storage? Resets all settings, statistics and sescions"))
     //     localStorage.clear();
 
-    progressObject = document.getElementById('progress');
-    resetObject    = document.getElementById('resetMs');
-    textObject     = document.getElementById('text');
-    resultsObject  = document.getElementById('results');
-
     populateSessionsTable();
 
     initalizeSettings();
  
     if (sessions.length)  {
         // use the las sessions progress
-        document.getElementById('kochEnabled').value = sessions[sessions.length-1].finalEnabled;
-        document.getElementById('lessons').value     = sessions[sessions.length-1].finalLesson;
+        $('#kochEnabled').value = sessions[sessions.length-1].finalEnabled;
+        $('#lessons').value     = sessions[sessions.length-1].finalLesson;
     }
     else {
-        document.getElementById('kochEnabled').value = 2;
-        document.getElementById('lessons').value     = 1;
+        $('#kochEnabled').value = 2;
+        $('#lessons').value     = 1;
     }
 
     initializeGraph();
     updateGraph();
 
-    // special handling of char and word WPM needed because wordWPM must be less than or equal to charWPM
-    const charWPMObject = document.getElementById('charWPM');
-    const wordWPMObject = document.getElementById('wordWPM');
- 
-    charWPMObject.addEventListener('input', () => {
-        settings.charWPM = parseInt(charWPMObject.value);
+    // special handling of char and word WPM needed because wordWPM must be less than or equal to charWPM 
+    $('#charWPM').addEventListener('input', () => {
+        settings.charWPM = parseInt($('#charWPM').value);
         if (settings.wordWPM > settings.charWPM) {
             settings.wordWPM    =  settings.charWPM;
-            wordWPMObject.value =  settings.wordWPM;
+            $('#wordWPM').value =  settings.wordWPM;
         }
         updateCharMs();
     });
 
-    wordWPMObject.addEventListener('input', () => {
-         settings.wordWPM = parseInt(wordWPMObject.value);
+    $('#wordWPM').addEventListener('input', () => {
+         settings.wordWPM = parseInt($('#wordWPM').value);
         if ( settings.wordWPM > settings.charWPM) {
             settings.charWPM    =  settings.wordWPM;
-            charWPMObject.value =  settings.charWPM;
+            $('#charWPM').value =  settings.charWPM;
         }
         updateCharMs();
     }); 
@@ -958,38 +927,32 @@ document.addEventListener('DOMContentLoaded', () => {
     setEnabledSymbols();
     highlightEnabledSymbols();
 
-    const enabledCharsObject = document.getElementById('enabledChars');
-    enabledCharsObject.addEventListener('change', () => {
-        enabledSymbols = enabledCharsObject.value.toUpperCase();
+    $('#enabledChars').addEventListener('change', () => {
+        enabledSymbols = $('#enabledChars').value.toUpperCase();
         isCharLesson = true;
         highlightEnabledSymbols();
     });
-    
-    kochEnabledObject = document.getElementById('kochEnabled');
-    lessonsObject = document.getElementById('lessons');
 
-    kochEnabledObject.addEventListener('change', () => {
-        if (lessonsObject.value > highestLessonAvailable())
-            lessonsObject.value = highestLessonAvailable();
+    $('#kochEnabled').addEventListener('change', () => {
+        if ($('#lessons').value > highestLessonAvailable())
+            $('#lessons').value = highestLessonAvailable();
         setEnabledSymbols();
         highlightEnabledSymbols();
     });
 
-    lessonsObject.addEventListener('change', () => {
+    $('#lessons').addEventListener('change', () => {
         setEnabledSymbols();
         highlightEnabledSymbols();
     });
 
-    const statusObject = document.getElementById('status');
-    statusObject.addEventListener('click', () => {
+    $('#status').addEventListener('click', () => {
         if (state == pauseState)
             startLesson();
         else
             stopLesson();
     });
 
-    const settingsTableObject = document.getElementById('settings');
-    settingsTableObject.addEventListener('change', () => {
+    $('#settings').addEventListener('change', () => {
         updateSettings();
     });
 });
