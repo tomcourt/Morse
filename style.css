@@ -1,3 +1,8 @@
+table {
+    border-spacing: 10px 10px;
+     width: 100%;
+}
+
 table.symbols, table.symbols th, table.symbols td {
   border: 1px solid black;
   border-collapse: collapse;
@@ -14,6 +19,31 @@ input[data-enabled="true"] {
 
 .morse {
   cursor: pointer;
+}
+
+#status {
+    padding: 8px 10px;
+    border: 2px solid; 
+    display: inline-block; 
+    height:18px; 
+    width: 11px;
+}
+
+#text {
+    display: block; 
+    padding: 5px 10px; 
+    border: 1px solid; 
+    height: 20px; 
+    min-width: 650px;
+}
+
+#charMs {
+    border:0 none;
+}
+
+#results {
+    padding: 10px; 
+    white-space: pre;
 }
 
 /* Body contains the tabs */

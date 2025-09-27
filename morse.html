@@ -26,7 +26,7 @@
   </div>
 
   <div id="trainingTab" class="tab-content active">
-  <table style="border-spacing: 10px 10px">
+  <table>
     <tr>
       <td>
         <label>Koch progress:<input type="number" id="kochEnabled" min="2" max="50" step="2"></label>
@@ -36,11 +36,14 @@
           <option value="1">include last 2 only</option>
           <option value="2">include last 4 only</option>
           <option value="3">include last 6 only</option>
-          <option value="4">all enabled, least seen</option>
-          <option value="5">all enabled, accuracy</option>
-          <option value="6">all enabled, slowest</option>
-          <option value="7">random words</option>
-          <option value="8">simulate qso's</option>
+          <option value="4">groups of 2</option>
+          <option value="5">groups of 2 or 3</option>
+          <option value="6">groups of 2 to 5</option>
+          <option value="7">all enabled, least seen</option>
+          <option value="8">all enabled, accuracy</option>
+          <option value="9">all enabled, slowest</option>
+          <option value="10">random words</option>
+          <option value="11">simulate qso's</option>
         </select></label>
       </td>
       <td>
@@ -49,19 +52,19 @@
     </tr>
   <table>
 
-  <table style="border-spacing: 10px 10px"> <tr>
-    <td style="height: 40px; width: 30px;">
-      <span id="status" style="padding: 8px 10px; border: 2px solid; display: inline-block; height:18px; width: 11px;">&#x23F8</span>
+  <table> <tr>
+    <td>
+      <span id="status">&#x23F8</span>
     </td>
     <td>
       <progress id="progress" value="0" max="100"></progress>
     </td>
     <td>
-      <span id="text" style="display: block; padding: 5px 10px; border: 1px solid; height: 20px; min-width: 650px;"></span>
+      <span id="text"></span>
     </td>
   </tr> </table>
 
-  <table style="border-spacing: 10px 10px" width="100%"> <tr>
+  <table> <tr>
     <td> 
     <label>Results #<input type="radio" id="countResults"   name="results" onchange="updateGraph(undefined, false)" value="count" checked></label>
     </td>
@@ -69,7 +72,7 @@
     <label>Results %<input type="radio" id="percentResults" name="results" onchange="updateGraph(undefined, true)" value="percent">        </label>
     </td>
     <td>
-      <span id="results" style="padding: 10px; white-space: pre;">Click the pause icon to start a lesson</span>
+      <span id="results">Click the pause icon to start a lesson</span>
     </td>
         <td> 
     <label>Session   <input type="radio" id="sessionStats"    name="stats" onchange="updateGraph(sessionStats)" value="count" checked></label>
@@ -93,19 +96,19 @@
   </div>
 
   <div id="setupTab" class="tab-content">
-    <table id="settings" style="border-spacing: 20px 10px">
+    <table id="settings">
       <tr>
         <td>
-          <label>Character WPM:<input type="number" id="charWPM" min="5" max="40" step="1"></label>
+          <label>Character WPM:<input type="number" id="charWPM" min="5" max="30" step="1"></label>
         </td>
         <td>
           <label>Dither &#177;WPM:<input type="number" id="ditherWPM" min="0" max="10" step="1"></label>
         </td>
         <td>
-          <label>Word WPM:<input type="number" id="wordWPM" min="5" max="40" step="1"></label>
+          <label>Word WPM, slow:<input type="number" id="wordWPM" min="5" max="30" step="1"></label>
         </td>
         <td>
-          <label>Character ms:<input type="number" id="charMs" style="border:0 none;" min="0" max="9999" readonly></label>
+          <label>Character ms:<input type="number" id="charMs" min="0" max="9999" readonly></label>
         </td>
       </tr>
       <tr>
@@ -116,21 +119,24 @@
           <label>Goal Successive:<input type="number" id="advanceSuccessive" min="10" max="99"></label>
         </td>
         <td>
-          <label>Advance on Goal:<input type="checkbox" id="advanceGoal"></label>
+          <label>Word WPM, fast:<input type="number" id="wordWPMfast" min="5" max="30" step="1"></label>
         </td>
         <td>
-          <label>Type behind:<input type="checkbox" id="typeBehind"></label>
+          <label>Silent fail:<input type="checkbox" id="silentFail"></label>
+        </td>
+        <td>
+          <label>Pause on word:<input type="checkbox" id="wordPause"></label>
         </td>
       </tr>
       <tr>
         <td>
-          <label>Reset ms:<input type="number" id="resetMs" min="0" max="9999" step="100"></label>
+          <label>Reset ms:<input type="number" id="resetMs" min="200" max="9999" step="100"></label>
         </td>
         <td>
           <label>Tone Hz:<input type="number" id="toneHz" min="100" max="9999" step="50"></label>
         </td>
         <td>
-          <label>Dither &#177;Tone:<input type="number" id="ditherTone" min="0" max="200" step="10"></label>
+          <label>Dither &#177;Tone:<input type="number" id="toneDither" min="0" max="200" step="10"></label>
         </td>
       </tr>
       <tr>
@@ -145,7 +151,7 @@
   </div>
 
   <div id="sessionsTab" class="tab-content">   
-    <table id="sessions" class="symbols" style="width:100%">
+    <table id="sessions" class="symbols">
         <thead>
           <th>Date</th>
           <th>Training time</th>
@@ -184,8 +190,7 @@
     To see the morse for any character, hover the cursor over the character in the graph below. To hear it, click on the character.<p> 
     <p>
     Tips:<p>
-    Remember to clearly think of the character while typing it, otherwise you are training<p>
-    your fingers to move when you hear a sound and will have trouble handwritting or hearing the words later.<p>
+    Remember to clearly think of the character while typing it, don't just let your fingers to move when you hear the sound.<p>
     To practice characters you are having trouble telling apart, set them in 'Enabled character set', to reset just select a lesson<p>
     Keep sessions short until you build up stanima.<p>
     Don't type more than one character for each sent, if you type the wrong character, move on to the next one<p>

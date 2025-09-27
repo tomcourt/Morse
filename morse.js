@@ -1,5 +1,4 @@
 // TODO FEATURES
-// Auto advance UI checkbox control
 // Timer defered adding wrong to Statistic and results
 // Local storage, reset button w. confirmation for each section
 // Handle the odd number of prosigns
@@ -14,16 +13,9 @@
 // Add labels to right side of graphs (small text)
 // Protosigns and keyboard characters for graphs
 // Summary of sessons and character by character of sessions
-// Sad trombone to replace bananna peel
-// Option to ignore results on aborted lesson
-// Use tick syntax for formatted strings
-// Move all style out of HTML and into CSS
 // Allow copy behind option, will show orange for missed characters (timeout or wrong)
-// Add grace ms to allow copy behind, if symbol is typed within grace its correct
 // Bad characters are shown orange until lesson is done, then an analysis is done to determine if timeout or wrong
 // suggested algorithm - Keep track of what is typed by user, add * for any timeouts. Permutate replacing * with correct character(wrong character typed) or empty character(timeout) to find least wrong characters (while not adding more characters than sent)
-// Add optional visual timeout/error, background for whole window goes red/yellow/orange for buzzer duration
-// Add volume levels for buzzer, fail/success sounds, these also double up as a way to disable each sound effect
 
 
 
@@ -37,16 +29,18 @@ let allSymbols      = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?/=+\\"
 let enabledSymbols  = allSymbols; 
 
 let runTimer;
-let timeoutTimer;
 let responseTimeoutMs = 0;
 let lastCharSent = "";
 let remainingLessonChars = "";
-let lessonStartTIme = 0;
+let lessonStartTime = 0;
 let correctInRow = 0;
 let lessonCharsLength = 0;
 let isCharLesson = false;
 let isNewSession = true;
 let isPercentResults = false;
+
+let toneHz;
+let charWPM; 
 
 let pauseState=0, playState=1, waitingState=2, checkmarkState=3, wrongState=4; 
 let state = pauseState;
@@ -155,15 +149,19 @@ const morse = {
 };
 
 
-
 function Setting() {
     this.charWPM           = 18;
+    this.ditherWPM         = 2;
     this.wordWPM           = 5;
+    this.wordWPMfast       = 13;
     this.resetMs           = 1000;
     this.toneHz            = 750;
+    this.toneDither        = 100;
     this.kochMethodOrder   = "KMRSUAPTLOWI.NJEF0Y,VG5/Q9ZH38B?427C1D6X=\\+";
     this.advancePercent    = 95;
     this.advanceSuccessive = 20;
+    this.silentFail        = false;
+    this.wordPause         = false;
 }
 
 let settings = JSON.parse(localStorage.getItem("morseCodeTrainer.settings")) ?? new Setting();
@@ -230,6 +228,61 @@ let sessions = JSON.parse(localStorage.getItem("morseCodeTrainer.sessions")) ?? 
 let currentSession;
 
 
+// FuzzyStringMatch
+// golden  - morse code string sent
+// rough   - student copied results, may contain characters in error or missing characters 
+//           for every timeout a * is added to rough, this either is a missing 
+//           character or can be ignored because copy is simply behind
+// returns - object (numberOfWrongCharacters, editsToMatchGolden)
+//           editsToMatchGolden matches 1 to 1 with golden showing the edits 
+//           required to match: (M)issing, (W)rong or (C)orrect
+function fuzzyStringMatch(golden, rough, i = 0, j = 0, memo = {}) {
+    const key = `${i},${j}`;
+    if (memo[key] !== undefined) 
+        return memo[key];
+
+    if (i === golden.length && j === rough.length)
+        return { cost: 0, edits: '' };
+    if (i === golden.length || j === rough.length)
+        return { cost: Infinity, edits: '' };
+
+    let result;
+    if (rough[j] === '*') {
+        // Option 1: * matches nothing (0 characters)
+        const matchZero = fuzzyStringMatch(golden, rough, i, j + 1, memo);
+        // Option 2: * matches one character (missing, M)
+        let matchOne = { cost: Infinity, edits: '' };
+        if (i < golden.length) {
+            const temp = fuzzyStringMatch(golden, rough, i + 1, j + 1, memo);
+            matchOne = { cost: temp.cost, edits: temp.edits + 'M' };
+        }
+
+        result = matchZero.cost <= matchOne.cost ? matchZero : { cost: matchOne.cost, edits: matchOne.edits };
+    } 
+    else {
+        // Literal character in rough
+        if (i >= golden.length) {
+            result = { cost: Infinity, edits: '' };
+        } 
+        else {
+            const mismatch = (golden[i] === rough[j]) ? 0 : 1;
+            const editChar = (golden[i] === rough[j]) ? 'C' : 'W';
+            const next = fuzzyStringMatch(golden, rough, i + 1, j + 1, memo);
+            result = { cost: mismatch + next.cost, edits: next.edits + editChar };
+        }
+    }
+
+    memo[key] = result;
+    return result;
+}
+
+// Usage example:
+// function matchResults(golden, rough) {
+//   const result = fuzzyStringMatch(golden, rough);
+//   return { cost: result.cost === Infinity ? 'No match' : result.cost, edits: result.edits };
+// }
+
+
 function openTab(evt, tabName) {
     removeClass($$('.tab-content'),'active');   // Hide all tab content    
     removeClass($$('.tab-button'), 'active');   // Remove active class from all buttons
@@ -273,7 +326,7 @@ function setState(newState, symbol='', color='black') {
 }
 
 
-function playBeep(duration, frequency=settings.toneHz, volume=1.0, wave="sine") {
+function playBeep(duration, frequency=toneHz, volume=1.0, wave="sine") {
     return new Promise((resolve) => {    
         const fadeTaper = 5 / 1000;         
         const ctx = initAudioContext();
@@ -314,8 +367,8 @@ function delay(ms) {
 // inter-character spaces are 3 units long
 // inter-word spaces are 7 units long
 // because every morse element (dit or dah) already has charUnit space, subtract that out
-function farnsworthWordUnit() {
-    return (60000 *  settings.charWPM - 37200 *  settings.wordWPM) / ( settings.charWPM *  settings.wordWPM) / 19; 
+function farnsworthWordUnit(charWPM) {
+    return (60000 *  charWPM - 37200 *  settings.wordWPM) / ( charWPM *  settings.wordWPM) / 19; 
 }
 
 
@@ -331,8 +384,8 @@ async function playMorse(pattern) {
         return;
     }
 
-    let charUnit = 1200 /  settings.charWPM;
-    let wordUnit = farnsworthWordUnit();
+    let charUnit = 1200 /  charWPM;
+    let wordUnit = farnsworthWordUnit(charWPM);
    
     for (let ch of pattern) {
         switch (ch) {
@@ -343,11 +396,11 @@ async function playMorse(pattern) {
             await delay(wordUnit * 7 - charUnit);
             break;
         case '.':
-            await delay(charUnit);      // delays front loaded to allow instant by student
+            await delay(charUnit);      // delays front loaded to allow instant response by student
             await playBeep(charUnit);
             break;
         case '-':
-            await delay(charUnit);      // delays front loaded to allow instant by student
+            await delay(charUnit);      // delays front loaded to allow instant response by student
             await playBeep(3 * charUnit);
             break;
         }
@@ -428,9 +481,9 @@ function createWords() {
         if (randomWords.length > 0)
             randomWords += ' ';
         randomWords += list.pop();
-        if (isPeriod && Math.random() < .25)
+        if (isPeriod && Math.random() < .2)
             randomWords += '.';
-        else if(isComma && Math.random() < .25)
+        else if(isComma && Math.random() < .2)
             randomWords += ',';
     }
     return randomWords;
@@ -611,29 +664,25 @@ function startLesson() {
     lessonStartTime = Date.now();
     runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
     lastCharSent = '';
+    toneHz = settings.toneHz - settings.toneDither + Math.floor((settings.toneDither*2+1)*Math.random());
+    charWPM = settings.charWPM - settings.ditherWPM + Math.floor((settings.ditherWPM*20+1)*Math.random())/10;
+    responseTimeoutMs = Math.floor(farnsworthWordUnit(charWPM) * 3);
     $('#text').innerHTML = '';
-    $('#results').textContent = "Concentrate on the sound";
+    $('#results').textContent = `Character ${charWPM} WPM, Word ${settings.wordWPM} WPM, Tone ${toneHz} Hz`;
 }
 
 
 function stopLesson() {
-    clearTimeout(runTimer);
-    clearTimeout(timeoutTimer);
-    clearInterval(progressTimer);
     setState(pauseState);
+    clearTimeout(runTimer);
+    clearInterval(progressTimer);
+    lastCharSent = '';
 
     if (!isCharLesson) {
         if (correctInRow >= settings.advanceSuccessive || 100*lessonStat.correct/lessonCharsLength >= settings.advancePercent) {
             let soundFile = new Audio('Tada.wav');
             soundFile.volume = .5;
             soundFile.play();
-
-            if ($('#advanceGoal').checked) {
-                if (++$('#lessons').value > highestLessonAvailable()) {
-                    $('#lessons').value = 1;
-                    $('#kochEnabled').value = Number($('#kochEnabled').value) + 2;
-                } 
-            }
         }
         else {
             let soundFile = new Audio('SadTrombone.mp3');
@@ -650,16 +699,12 @@ function timeoutWithoutKeypress() {
     clearInterval(progressTimer);
     $('#progress').value = $('#progress').max;
     $('#text').innerHTML += '<SPAN style="color:orange";>' + lastCharSent + '</SPAN>';
-    runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
-    $('#body').style.backgroundColor = 'orange';
-    if ($('#typeBehind').checked) {
-        delay(200).then(
-            function() { $('#body').style.backgroundColor = 'white';},
-        );
-    }
-    else {
+    if (!$('#silentFail').checked) {
         playBeep(200,200,.2,'square').then(
-            function() { $('#body').style.backgroundColor = 'white';},
+            function() { 
+                if (state != pauseState)
+                    runTimer = window.setTimeout(sendNextCharacter, responseTimeoutMs); 
+            }
         );
     }
     lessonStat.timeout++;
@@ -669,25 +714,26 @@ function timeoutWithoutKeypress() {
 
 
 function sendNextCharacter() {
-    if (lastCharSent != '') {
+    clearTimeout(runTimer);
+    if (lastCharSent != '') 
         timeoutWithoutKeypress();
-    }
+
     if (remainingLessonChars == '' || correctInRow >= settings.advanceSuccessive) 
         stopLesson();
-    else {
+    else {        
         let send = remainingLessonChars[0];
         remainingLessonChars = remainingLessonChars.slice(1); 
         setState(playState);
         $('#progress').value = 0;
         playMorse(morse[send]).then(() => {
-            if (state == playState) {
+            if (state != pauseState) {
                 setState(waitingState);
                 progressStartTime = Date.now();
                 progressTimer = window.setInterval(() => {
                     $('#progress').value = Date.now() - progressStartTime;
                 }, 100);
+                runTimer = window.setTimeout(sendNextCharacter, responseTimeoutMs);
                 lastCharSent = send;
-                timeoutTimer = window.setTimeout(timeoutWithoutKeypress, responseTimeoutMs);
             }
         });
     }
@@ -701,15 +747,13 @@ document.addEventListener('keydown', (evt) => {
             startLesson();
         else
             stopLesson();        
-    }
-    if (evt.key && lastCharSent != '') {
-        clearTimeout(timeoutTimer);
+    } 
+    else if (evt.key && lastCharSent != '') {
         clearInterval(progressTimer);
         if (lastCharSent == evt.key.toUpperCase()) {
             setState(checkmarkState);
             $('#text').innerHTML += evt.key.toUpperCase();
             let interval = Date.now() - progressStartTime;
-            runTimer = window.setTimeout(sendNextCharacter, responseTimeoutMs-interval);
             correctInRow++;
             lessonStat.slow = Math.max(lessonStat.slow, interval);
             lessonStat.fast = Math.min(lessonStat.fast, interval);
@@ -723,16 +767,13 @@ document.addEventListener('keydown', (evt) => {
         else {
             setState(wrongState, lastCharSent, 'red');
             $('#text').innerHTML += '<SPAN style="color:red";>' + lastCharSent + '</SPAN>';
-            runTimer = window.setTimeout(sendNextCharacter, settings.resetMs);
-            $('#body').style.backgroundColor = 'red';
-            if ($('#typeBehind').checked) {
-                delay(200).then(
-                    function() { $('#body').style.backgroundColor = 'white';},
-                );
-            }
-            else {
+            if (!$('#silentFail').checked) {
+                clearTimeout(runTimer);
                 playBeep(200,200,.2,'square').then(
-                    function() { $('#body').style.backgroundColor = 'white';},
+                    function() { 
+                        if (state != pauseState)
+                            runTimer = window.setTimeout(sendNextCharacter, responseTimeoutMs); 
+                    }
                 );
             }
             correctInRow = 0;
@@ -746,35 +787,40 @@ document.addEventListener('keydown', (evt) => {
 
 
 function updateCharMs() {
-     $('#charMs').value = responseTimeoutMs = Math.floor(farnsworthWordUnit() * 3);
+     $('#charMs').value = responseTimeoutMs = Math.floor(farnsworthWordUnit(settings.charWPM) * 3);
      $('#progress').max = $('#charMs').value;
 }
 
 
 function initalizeSettings() {
     $('#charWPM').value           = settings.charWPM;
+    $('#ditherWPM').value         = settings.ditherWPM;
     $('#wordWPM').value           = settings.wordWPM;
+    $('#wordWPMfast').value       = settings.wordWPMfast;
+    $('#resetMs').value           = settings.resetMs;
+    $('#toneHz').value            = settings.toneHz;
+    $('#toneDither').value        = settings.toneDither;
     $('#kochOrder'). value        = settings.kochMethodOrder;
     $('#advancePercent').value    = settings.advancePercent
     $('#advanceSuccessive').value = settings.advanceSuccessive;
-    $('#advanceGoal').checked     = settings.advanceGoal;
-    $('#typeBehind').checked      = settings.typeBehind;
-    $('#resetMs').value           = settings.resetMs;
-    $('#toneHz').value            = settings.toneHz;
+    $('#silentFail').checked      = settings.silentFail;
+    $('#wordPause').checked       = settings.wordPause;
     updateCharMs();
 }
 
 
 function updateSettings() {
-    settings.charWPM           = Number($('#charWPM').value);
+    settings.charWPM = charWPM = Number($('#charWPM').value);
+    settings.ditherWPM         = Number($('#ditherWPM').value);
     settings.wordWPM           = Number($('#wordWPM').value);
     settings.kochMethodOrder   = $('#kochOrder').value;
     settings.advancePercent    = Number($('#advancePercent').value);
     settings.advanceSuccessive = Number($('#advanceSuccessive').value);
     settings.resetMs           = Number($('#resetMs').value);
-    settings.toneHz            = Number($('#toneHz').value);
-    settings.advanceGoal       = $('#advanceGoal').checked;
-    settings.typeBehind        = $('#typeBehind').checked;
+    settings.toneHz = toneHz   = Number($('#toneHz').value);
+    settings.toneDither        = $('#toneDither').value;
+    settings.silentFail        = $('#silentFail').checked;
+    settings.wordPause         = $('#wordPause').checked;
     updateCharMs();
     localStorage.setItem("morseCodeTrainer.settings", JSON.stringify(settings));
 }
